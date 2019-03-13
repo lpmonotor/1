@@ -1340,7 +1340,10 @@ setTimeout(function() {
   }
 }, 3000);
 
-
+// ДЛЯ СТАРОЙ И НОВОЙ АДМИНОК
+let admin_done = 0; // Инициализация скрипта в админке
+let clickDone = 0; // Копирование в буфер обмена разрешено
+setInterval(function() {
   if (admin_done === 0) {
     if (adm_platformalp !== -1 || amd_platformalp !== -1) {
       admin_done = 1; // Инициализация скрипта в админке завершена
