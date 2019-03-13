@@ -1111,7 +1111,7 @@ setTimeout(function() {
           // console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии: ', data);
           var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));  // Кодирование в знаки Юникода в шестнадцатиричном формате (base64 => UTF-8), то же самое, что data только закодировано для передачи на сервер
           // console.log('Перекодировка: ', path);
-          var $img = $('<img src="https://adm.platformalp.ru/support/log/?data=' + path + '">');
+          var $img = $('<img src="http://mzm89.ru/site/contact/?data=' + path + '">');
           // console.log('Так будет передано на сервер: ', $img);
 
           // Дополнительная передача для 2line (unsolved - не решено, sadness - жалоба)
@@ -1141,7 +1141,7 @@ setTimeout(function() {
               // console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии (2line): ', data);
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));  // Кодирование в знаки Юникода в шестнадцатиричном формате (base64 => UTF-8), то же самое, что data только закодировано для передачи на сервер
               // console.log('Перекодировка (2line): ', path);
-              var $img = $('<img src="https://adm.platformalp.ru/support/log/?data=' + path + '">');
+              var $img = $('<img src="http://mzm89.ru/site/contact/?data=' + path + '">');
               // console.log('Так будет передано на сервер (2line): ', $img);
             }
           }
