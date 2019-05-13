@@ -4,7 +4,7 @@
 */
 
 'use strict';
-var vScript = '0.24';
+var vScript = '0.23.4';
 console.log('vScript: ', vScript);
 var users = '2line';  // 1line, 2line
 console.log('Role in script: ', users);
@@ -140,7 +140,7 @@ setTimeout(function() {
 
         // Передать информацию на сервер
         let path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        $('<img src="http://support.lpteam.ru/reporter.php/?data=' + path + '">');
+        $('<img src="https://adm.platformalp.ru/support/log/?data=' + path + '">');
       }
     }
 
@@ -227,9 +227,9 @@ setTimeout(function() {
     let $is_minimize = $('body.ember-application.ember-ready .minimize_pannel').is('.minimize_pannel'); // Уже добавлено?
     if (!$is_minimize) {
       if (modify_intercom_style === 'on') {
-        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 50px; z-index: 2147483648; background-color: rgba(76, 175, 80, 0.3);"></div>');
+        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 1px; z-index: 2147483648; background-color: rgba(76, 175, 80, 0.3);"></div>');
       } else {
-        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 50px; z-index: 2147483648; background-color: rgba(229, 55, 52, 0.3);"></div>');
+        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 1px; z-index: 2147483648; background-color: rgba(229, 55, 52, 0.3);"></div>');
       }
     }
 
@@ -273,9 +273,8 @@ setTimeout(function() {
     });
 
 
-    // ОТОБРАЗИТЬ НАЛИЧИЕ, КОЛИЧЕСТВО ТИКЕТОВ НА ПЕРВОЙ/ВТОРОЙ И ВОСПРОИЗВЕСТИ ЗВУК ПРИ ПОЯВЛЕНИИ ТИКЕТА
+    // ОТОБРАЗИТЬ НАЛИЧИЕ И КОЛИЧЕСТВО ТИКЕТОВ НА ПЕРВОЙ/ВТОРОЙ
     let counter_channel = ''; // Счетчик тикетов
-    let playWarning = 0; // Значение постоянно увеличивается и сбрасывается на 0, если текущее количество тикетов равно нулю
     let name_channel; // Имя канала
     let avatar_channel; // Логотип канала
 
@@ -321,24 +320,6 @@ setTimeout(function() {
             $add_counter.append('<div class="counter_channel"><span align="center"><span style="display: block; position: relative; height: 100%; width: 100%;  background-color: rgba(255, 255, 255, 0.7); font-weight: bold; font-size: 20px; -webkit-user-select: none; -moz-user-select: none;">' + counter_line + '</span></span><style>.counter_channel > span {-webkit-animation: pulse 3s linear infinite; transition: top 3s ease-out 3s; display: block; position: absolute; height: 20px; width: 20px; top: ' + top_button + '; left: 85%; background-image: url(' + avatar_channel + '); background-size: contain; cursor: pointer;} @-webkit-keyframes pulse {from {height: 20px; width: 20px; left: 85%;} to {height: 25px; width: 25px; left: 80%;}}</style></div>');
           } else if (counter_line > 5) {
             $add_counter.append('<div class="counter_channel"><span align="center"><span style="display: block; position: relative; height: 100%; width: 100%;  background-color: rgba(255, 255, 255, 0.7); font-weight: bold; font-size: 30px; -webkit-user-select: none; -moz-user-select: none;">' + counter_line + '</span></span><style>.counter_channel > span {-webkit-animation: pulse 1s linear infinite; transition: top 1s ease-out 1s; display: block; position: absolute; height: 20px; width: 20px; top: ' + top_button + '; left: 85%; background-image: url(' + avatar_channel + '); background-size: contain; cursor: pointer;} @-webkit-keyframes pulse {from {height: 20px; width: 20px; left: 85%;} to {height: 25px; width: 25px; left: 80%;}}</style></div>');
-          }
-
-          // Наращивать число в playWarning или сбросить на ноль при условии, что и counter_line равно нулю, а также воспроизводить звук при наращивании playWarning
-          if (counter_line > playWarning) {
-            playWarning = counter_line;
-
-            // Проверка был ли уже добавлен звук
-            let isWarning = $('body .myAudio').is('.myAudio');
-
-            if (!isWarning) {
-              $('body').append('<audio style="display: none;" id="myAudio" src="https://d.zaix.ru/7PqN.mp3" volume="-8000" controls autoplay></audio>');
-              document.getElementById('myAudio').volume -= 0.7; // Громкость на 30%
-              setTimeout(function() {
-                $('#myAudio').remove();
-              }, 1501);
-            }
-          } else if (counter_line <= 0) {
-            playWarning = 0;
           }
 
           // Переключиться на свой канал при клике на подсветку
@@ -727,30 +708,29 @@ setTimeout(function() {
       });
     }, 1000);
 
-
+    /*
+    * Ломает отображение тикетов
     // ДОБАВИТЬ "NEW" К ТЕМ ТИКЕТАМ, ГДЕ ЕСТЬ ОТВЕТ ОТ КЛИЕНТА
     setInterval(function() {
       $('.js__inbox-list-item .conversation__list__item__summary .layout__media.o__center').each(function() {
         let admin_message = $(this).find('.o__admin-note, .o__admin-comment').is('.o__admin-note, .o__admin-comment'); // Есть комментарий агента или заметка агента
-        let typing = $(this).find('[class*="is-typing"]').is('[class*="is-typing"]'); // Клиент печатает
+        let typing = $(this).find('.o__is-typing-on').is('.o__is-typing-on'); // Клиент печатает
         let added_new_tickets = this.getElementsByClassName('new_tickets')[0]; // NEW уже добавлен?
 
-        if (!added_new_tickets) {
-          if (!admin_message && !typing) {
-            $(this).find('.layout__media__ext:not([dir="ltr"])').prepend('<div class="new_tickets" style="margin-top: -14px;"><p style="color: rgb(255,61,0);font-weight: bold;font-size: 16px;">NEW</p></div>');
+        if (added_new_tickets === undefined) {
+          if ((admin_message === false) && (typing === false)) {
+            $(this).prepend('<div class="new_tickets" style="flex: 0 0 auto; width: 32px"><p style="position: relative; left: 25%; color: rgb(255,61,0); width: 50%; font-weight: bold; font-size: 16px; text-align: center; word-wrap: break-word;">NEW</p></div>');
           }
-        } else if (added_new_tickets && admin_message || typing) {
+        } else if ((added_new_tickets !== undefined) && (admin_message === true) || (typing === true)) {
           $('.new_tickets').remove();
         }
       });
     }, 1000);
+    */
 
 
     // БОЛЬШЕ ШИРИНЫ ДЛЯ ПОЛОСКИ В ТИКЕТЕ С ЗАМЕТКОЙ ОТ АГЕНТА
-    document.getElementsByClassName('myStyle')[0].innerHTML += '.js__inbox-list-item .conversation__list__item__summary .layout__media.o__center .o__admin-note:not([class*="typing"]) svg.interface-icon {width: 20px!important; height: 20px!important;} .js__inbox-list-item .conversation__list__item__summary .layout__media.o__center .o__admin-note:not([class*="typing"]) {width: 14px!important; padding: 0 5px!important;}';
-
-    // ММЕНЬШЕ ОТСТУП У КНОПКИ NOTE и REPLY, ЧТОБЫ ПАНЕЛЬ С БЫСТРЫМИ ССЫЛКАМИ НЕ ПЕРЕХОДИЛА НА НОВУЮ СТРОКУ (ПРИ МАСШТАБЕ СТРАНИЦЫ В 90%)
-    document.getElementsByClassName('myStyle')[0].innerHTML += ' [class*="current-conversation"] .tabs .o__in-pane-selector {margin-right: 15px!important;}';
+    document.getElementsByClassName('myStyle')[0].innerHTML += '.js__inbox-list-item .conversation__list__item__summary .layout__media.o__center .o__admin-note:not([class*="typing"]) {width: 8px!important; margin-right: 4px!important;}';
 
 
     // ПРОВЕРКА НАЛИЧИЯ EMAIL И БЫСТРЫЕ ССЫЛКИ
@@ -795,7 +775,7 @@ setTimeout(function() {
       // Добавить - Запросить EMAIL клиента
       if ((val_email === undefined) && (text_added_email === undefined) && (open_ok === true)) {
         $('.my_is_open_panel, .my_quick_links').remove();
-        $append_message.append('<div class="my_is_email tabs__discrete-tab" style="display: block; font-weight: 600; padding: 7px 0px 7px 0px; cursor: default;"><span style="color: crimson; font-size: 17px;">Запросить EMAIL клиента</span></div>');
+        $append_message.append('<div class="my_is_email tabs__discrete-tab" style="display: block; font-weight: 600; padding: 7px 0px 7px 0px;"><span style="color: crimson; font-size: 17px;">Запросить EMAIL клиента</span></div>');
       }
       // Добавить - быстрые ссылки на админку
       if ((open_ok === true) && (val_email !== undefined)) {
@@ -1108,11 +1088,11 @@ setTimeout(function() {
             channel: channel, // Имя кнопки
             msg: $msg.val().replace(/\s+/g, ' ').replace(/&/g, '!!AMPERSAND!!'), // Комментарий (выделенный текст в тикете или написанный вручную в панели)
           };
-           console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии: ', data);
+          // console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии: ', data);
           var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));  // Кодирование в знаки Юникода в шестнадцатиричном формате (base64 => UTF-8), то же самое, что data только закодировано для передачи на сервер
-          console.log('Перекодировка: ', path);
-          var $img = $('<img src="http://support.lpteam.ru/reporter.php/?data=' + path + '">');
-          console.log('Так будет передано на сервер: ', $img);
+           console.log('Перекодировка: ', path);
+          var $img = $('<img src="https://adm.platformalp.ru/support/log/?data=' + path + '">');
+           console.log('Так будет передано на сервер: ', $img);
 
           // Дополнительная передача для 2line (unsolved - не решено, sadness - жалоба)
           if (users === '2line') {
@@ -1138,11 +1118,11 @@ setTimeout(function() {
                   msg: 'Жалоба',  // Текст, который будет отображаться в канале
                 };
               }
-              // console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии (2line): ', data);
+               console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии (2line): ', data);
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));  // Кодирование в знаки Юникода в шестнадцатиричном формате (base64 => UTF-8), то же самое, что data только закодировано для передачи на сервер
-              // console.log('Перекодировка (2line): ', path);
-              var $img = $('<img src="http://support.lpteam.ru/reporter.php/?data=' + path + '">');
-              // console.log('Так будет передано на сервер (2line): ', $img);
+               console.log('Перекодировка (2line): ', path);
+              var $img = $('<img src="https://adm.platformalp.ru/support/log/?data=' + path + '">');
+               console.log('Так будет передано на сервер (2line): ', $img);
             }
           }
 
@@ -1250,9 +1230,8 @@ setTimeout(function() {
                 var this_channel = $(this).text().trim();
                 var channel_search = this_channel.search(channel);
 
-                if (channel_search !== -1) {
+                if (channel_search >= 0) {
                   $(this).click();
-                  return false; // ДБез этого иногда тикет закрывался на себе
                 }
               });
 
@@ -1264,10 +1243,10 @@ setTimeout(function() {
                 channel: '2line',
                 msg: name,
               };
-               console.log('Закрытый тикет (2line): ', data);
+              // console.log('Закрытый тикет (2line): ', data);
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-              console.log('Crash или Closed - передача на сервер: ', path);
-              (new Image).src = support.lpteam.ru/reporter.php/?data=' + path;
+              // console.log('Crash или Closed - передача на сервер: ', path);
+              (new Image).src = 'https://adm.platformalp.ru/support/log/?data=' + path;
 
               // Кнопка отвечающая за закрытие тикета
               $('[data-content="Close conversation"] button').click();
@@ -1287,7 +1266,7 @@ setTimeout(function() {
             if (data.channel === 'crash') {
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
               // console.log('Crash или Closed - передача на сервер: ', path);
-              (new Image).src = 'http://support.lpteam.ru/reporter.php/?data=' + path;
+              (new Image).src = 'https://adm.platformalp.ru/support/log/?data=' + path;
             }
 
             $('[data-content="Close conversation"] button').click(); // Клик по "Закрыть тикет"
