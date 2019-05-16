@@ -4,9 +4,9 @@
 */
 
 'use strict';
-var vScript = '0.23.4';
+var vScript = '0.24.9';
 console.log('vScript: ', vScript);
-var users = '2line';  // 1line, 2line
+var users = '1line';  // 1line, 2line
 console.log('Role in script: ', users);
 var name = localStorage.getItem('nameAgent'); // Имя агента
 var recScriptVersion = localStorage.getItem('support_version'); // Записанная версия скрипта
@@ -139,8 +139,9 @@ setTimeout(function() {
         localStorage.setItem('support_version', vScript); // Записать новую версию скрипта
 
         // Передать информацию на сервер
-        let path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        let path = btoa(encodeURIComponent(JSON.stringify(data)));
         $('<img src="https://support.lpteam.ru/reporter.php?data=' + path + '">');
+        
       }
     }
 
@@ -176,7 +177,7 @@ setTimeout(function() {
         let channel_cooperation = select_channel.search(/Сотрудничество/);
 
         // Выполнить если получено соответствующее имя канала
-        if (channel_1line === 0 || channel_2line === 0 || channel_voc === 0 || channel_lp === 0 || channel_cooperation === 0) {
+       /* if (channel_1line === 0 || channel_2line === 0 || channel_voc === 0 || channel_lp === 0 || channel_cooperation === 0) {
           let is_open = $('.conversation__inbox__list-filter .u__left [class*="custom-select__box"] svg path[fill-rule="evenodd"]').is('[fill-rule="evenodd"]'); // Получение информации о том, что открыт точно Open
 
           if (is_open) {
@@ -192,7 +193,7 @@ setTimeout(function() {
               }
             }
           }
-        }
+        }*/
       }
     }, 500);
 
@@ -222,14 +223,15 @@ setTimeout(function() {
       document.getElementsByClassName('myStyle')[0].innerHTML += myStyleCloseReopenOff; // Панель в тикете, с кнопкой "Closed/Reopen"
       document.getElementsByClassName('myStyle')[0].innerHTML += myStyleChoiceTicketsOff; // Панель выбора тикета
     }
+    document.getElementsByClassName('myStyle')[0].innerHTML += ' .profile-sidebar-section__regular-padding {padding: 0 5px!important;} ';
 
     // Добавить кнопку переключения вида если она еще не была добавлена
     let $is_minimize = $('body.ember-application.ember-ready .minimize_pannel').is('.minimize_pannel'); // Уже добавлено?
     if (!$is_minimize) {
       if (modify_intercom_style === 'on') {
-        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 1px; z-index: 2147483648; background-color: rgba(76, 175, 80, 0.3);"></div>');
+        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 50px; z-index: 2147483648; background-color: rgba(76, 175, 80, 0.3);"></div>');
       } else {
-        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 1px; z-index: 2147483648; background-color: rgba(229, 55, 52, 0.3);"></div>');
+        $('body.ember-application.ember-ready').append('<div class="minimize_pannel" style="position: fixed; width: 10px; height: 10px; bottom: 1px; left: 50px; z-index: 2147483648; background-color: rgba(229, 55, 52, 0.3);"></div>');
       }
     }
 
@@ -273,8 +275,12 @@ setTimeout(function() {
     });
 
 
-    // ОТОБРАЗИТЬ НАЛИЧИЕ И КОЛИЧЕСТВО ТИКЕТОВ НА ПЕРВОЙ/ВТОРОЙ
+    
+
+
+    // ОТОБРАЗИТЬ НАЛИЧИЕ, КОЛИЧЕСТВО ТИКЕТОВ НА ПЕРВОЙ/ВТОРОЙ И ВОСПРОИЗВЕСТИ ЗВУК ПРИ ПОЯВЛЕНИИ ТИКЕТА
     let counter_channel = ''; // Счетчик тикетов
+    let playWarning = 0; // Значение постоянно увеличивается и сбрасывается на 0, если текущее количество тикетов равно нулю
     let name_channel; // Имя канала
     let avatar_channel; // Логотип канала
 
@@ -285,6 +291,19 @@ setTimeout(function() {
       name_channel = 'Вторая линия СП';
       avatar_channel = '//static.intercomassets.com/team-avatars/1f525.png';
     }
+
+
+    // Записать уровень громкости по умолчанию
+    let volumeCustom = localStorage.getItem('volumeCustom');
+    console.log('volumeCustom: ', volumeCustom);
+
+    if (!volumeCustom) {
+      localStorage.setItem('volumeCustom', 0.7);
+      volumeCustom = 0.7;
+    }
+
+    let volumeCurrent = ''; // Текущая громкость
+
 
     setInterval(function() {
       let selector_value = '[role="application"] .submenu__sections__section__items a[data-content="' + name_channel + '"] [class*="count"]'; // Путь по которому нужно получить число
@@ -300,8 +319,41 @@ setTimeout(function() {
       let $add_counter = $('.conversations_inbox .skiptranslate .conversation__inbox__list-header.o__has-columns'); // Путь для добавления
       let ticket_list = $add_counter.is($add_counter); // Добавить счетчик если в списке тикетов
 
+      // Проверить добавлен ли регулятор громкости
+      let volumeSize = $('body.ember-application.ember-ready .volumeSize').is('.volumeSize'); // Уже добавлено?
+      if (!volumeSize) {
+        $('body.ember-application.ember-ready').append('<div class="volumeSize" style="position: fixed; display: block; bottom: 1px; right: 1px; z-index: 2147483648;"><select name="volume" style="font-size: 85%;"><option value="1.0">0%</option><option value="0.9">10%</option><option value="0.8">20%</option><option value="0.7">30%</option><option value="0.6">40%</option><option value="0.4">60%</option><option value="0.2">80%</option><option value="0.0">100%</option></select></div>');
+        $('.volumeSize select').change(function() {
+          volumeCurrent = this.options[this.selectedIndex].value; // При изменении громкости записать новое значение в переменную
+          $('.myAudio').remove();
+        });
+      }
+
+      // Изменение уровня громкости
+      if (volumeCurrent === '') { // Еще текущая громкость еще не указана
+        volumeCurrent = volumeCustom;
+        console.log('volumeCurrent: ', volumeCurrent);
+
+        $('.volumeSize option[value="' + volumeCustom + '"]').attr('selected', 'selected'); // Добавить selected к актуальному элементу option
+
+      } else if (volumeCurrent !== '' && volumeCurrent !== volumeCustom) { // Иначе если Текущая громкость уже задана и она не равна громкости по умолчанию
+        localStorage.setItem('volumeCustom', volumeCurrent); // Записать новое значение громкости по умолчанию
+        volumeCustom = volumeCurrent;
+        // console.log('volumeCustom: ', volumeCustom);
+
+        $('.volumeSize option[selected]').removeAttr('selected'); // Удалить selected у не актуального элемента option
+        $('.volumeSize option[value="' + volumeCustom + '"]').attr('selected', 'selected'); // Добавить selected к актуальному элементу option
+
+        // Проверка громкости
+        $('body').append('<audio style="display: none;" id="myAudio" class="myAudio" src="https://d.zaix.ru/7PqN.mp3" autoplay></audio>');
+        document.getElementById('myAudio').volume -= localStorage.getItem('volumeCustom'); // Уровень громкости
+        setTimeout(function() {
+          $('.myAudio').remove();
+        }, 1501);
+      }
+
       if (ticket_list) {
-        let top_button; // Какой отсутп сверху будет у подсветки
+        let top_button; // Какой отступ сверху будет у подсветки
         if (modify_intercom_style === 'on') {
           top_button = '7px';
         }
@@ -322,6 +374,24 @@ setTimeout(function() {
             $add_counter.append('<div class="counter_channel"><span align="center"><span style="display: block; position: relative; height: 100%; width: 100%;  background-color: rgba(255, 255, 255, 0.7); font-weight: bold; font-size: 30px; -webkit-user-select: none; -moz-user-select: none;">' + counter_line + '</span></span><style>.counter_channel > span {-webkit-animation: pulse 1s linear infinite; transition: top 1s ease-out 1s; display: block; position: absolute; height: 20px; width: 20px; top: ' + top_button + '; left: 85%; background-image: url(' + avatar_channel + '); background-size: contain; cursor: pointer;} @-webkit-keyframes pulse {from {height: 20px; width: 20px; left: 85%;} to {height: 25px; width: 25px; left: 80%;}}</style></div>');
           }
 
+          // Наращивать число в playWarning или сбросить на ноль при условии, что и counter_line равно нулю, а также воспроизводить звук при наращивании playWarning
+          if (counter_line > playWarning) {
+            playWarning = counter_line;
+
+            // Проверка был ли уже добавлен звук
+            let isWarning = $('body .myAudio').is('.myAudio');
+
+            if (!isWarning) {
+              $('body').append('<audio style="display: none;" id="myAudio" class="myAudio" src="https://d.zaix.ru/7PqN.mp3" autoplay></audio>');
+              document.getElementById('myAudio').volume -= localStorage.getItem('volumeCustom'); // Уровень громкости
+              setTimeout(function() {
+                $('.myAudio').remove();
+              }, 1501);
+            }
+          } else if (counter_line <= 0) {
+            playWarning = 0;
+          }
+
           // Переключиться на свой канал при клике на подсветку
           $('.counter_channel').dblclick(function() {
             $('a[data-content="' + name_channel + '"]').click();
@@ -335,7 +405,7 @@ setTimeout(function() {
 
     // ПОДСВЕТКА В ТИКЕТЕ С КАКОГО РАЗДЕЛА ПИШЕТ КЛИЕНТ
     setInterval(function() {
-      $('.conversation__stream.u__relative .conversation__part [class*="user"], .card__expanded-content .conversation__part [class*="user"]').each(function() {
+      $('.conversation__stream.u__relative .conversation__part .o__user, .card__expanded-content .conversation__part .o__user').each(function() {
         var page_treatment = $(this).find('a[rel="noopener"]').attr('href'); // Получить ссылку
         // console.log('page_treatment:', page_treatment);
 
@@ -363,10 +433,11 @@ setTimeout(function() {
           let profile = page_treatment.search(/profile/);           // Раздел "Профиль"
           let page_create = page_treatment.search(/page-create/);   // Создание страницы
           let home = page_treatment.search(/app.platformalp.ru/);   // На главной
+          let bazao = page_treatment.search(/support.platformalp.ru/);   // База ответов
 
           let text_added = $(this).find('.editor_link').text();     // Текст уже добавлен?
 
-          let for_adding = '.t__light-text.c__lightest[class*="meta"].u__left'; // Путь для добавления подсветки
+          let for_adding = '.t__light-text.u__left'; // Путь для добавления подсветки
           let adminLink = 'https://amd.platformalp.ru/';               // Ссылка на админку
 
           // Редактор страницы
@@ -697,40 +768,50 @@ setTimeout(function() {
 
           // На главной
           if (home === -1) {
+                if (bazao !== -1) {                         
+                let bazao_search = text_added.search(/База ответов/i); // Проверить был ли уже добавлен текст
+
+                if (bazao_search === -1) {
+                // Добавление подсветки
+                $(this).find(for_adding).append('<span class="c__deemphasized-text editor_link" style="color: rgb(0,200,100); font-size: initial; font-weight: 500; margin-left: 5px;">База ответов</span>');
+                }
+                } else {
+              
             let home_search = text_added.search(/На главной/i); // Проверить был ли уже добавлен текст
 
             if (home_search === -1) {
               // Добавление подсветки
               $(this).find(for_adding).append('<span class="c__deemphasized-text editor_link" style="color: rgb(0,200,100); font-size: initial; font-weight: 500; margin-left: 5px;">На главной</span>');
             }
-          }
+        }}
         }
       });
     }, 1000);
 
-    /*
-    * Ломает отображение тикетов
+
     // ДОБАВИТЬ "NEW" К ТЕМ ТИКЕТАМ, ГДЕ ЕСТЬ ОТВЕТ ОТ КЛИЕНТА
     setInterval(function() {
       $('.js__inbox-list-item .conversation__list__item__summary .layout__media.o__center').each(function() {
-        let admin_message = $(this).find('.o__admin-note, .o__admin-comment').is('.o__admin-note, .o__admin-comment'); // Есть комментарий агента или заметка агента
-        let typing = $(this).find('.o__is-typing-on').is('.o__is-typing-on'); // Клиент печатает
+        let admin_message = $(this).find('.o__admin-note, .o__xs').is('.o__admin-note, .o__xs'); // Есть комментарий агента или заметка агента
+        let typing = $(this).find('[class*="is-typing"]').is('[class*="is-typing"]'); // Клиент печатает
         let added_new_tickets = this.getElementsByClassName('new_tickets')[0]; // NEW уже добавлен?
 
-        if (added_new_tickets === undefined) {
-          if ((admin_message === false) && (typing === false)) {
-            $(this).prepend('<div class="new_tickets" style="flex: 0 0 auto; width: 32px"><p style="position: relative; left: 25%; color: rgb(255,61,0); width: 50%; font-weight: bold; font-size: 16px; text-align: center; word-wrap: break-word;">NEW</p></div>');
+        if (!added_new_tickets) {
+          if (!admin_message && !typing) {
+            $(this).find('.layout__media__ext:not([dir="ltr"])').prepend('<div class="new_tickets" style="margin-top: -14px;"><p style="color: rgb(255,61,0);font-weight: bold;font-size: 16px;">NEW</p></div>');
           }
-        } else if ((added_new_tickets !== undefined) && (admin_message === true) || (typing === true)) {
+        } else if (added_new_tickets && admin_message || typing) {
           $('.new_tickets').remove();
         }
       });
     }, 1000);
-    */
 
 
     // БОЛЬШЕ ШИРИНЫ ДЛЯ ПОЛОСКИ В ТИКЕТЕ С ЗАМЕТКОЙ ОТ АГЕНТА
-    document.getElementsByClassName('myStyle')[0].innerHTML += '.js__inbox-list-item .conversation__list__item__summary .layout__media.o__center .o__admin-note:not([class*="typing"]) {width: 8px!important; margin-right: 4px!important;}';
+    document.getElementsByClassName('myStyle')[0].innerHTML += '.js__inbox-list-item .conversation__list__item__summary .layout__media.o__center .o__admin-note:not([class*="typing"]) svg.interface-icon {width: 20px!important; height: 20px!important;} .js__inbox-list-item .conversation__list__item__summary .layout__media.o__center .o__admin-note:not([class*="typing"]) {width: 14px!important; padding: 0 5px!important;}';
+
+    // ММЕНЬШЕ ОТСТУП У КНОПКИ NOTE и REPLY, ЧТОБЫ ПАНЕЛЬ С БЫСТРЫМИ ССЫЛКАМИ НЕ ПЕРЕХОДИЛА НА НОВУЮ СТРОКУ (ПРИ МАСШТАБЕ СТРАНИЦЫ В 90%)
+    document.getElementsByClassName('myStyle')[0].innerHTML += ' [class*="current-conversation"] .tabs .o__in-pane-selector {margin-right: 15px!important;}';
 
 
     // ПРОВЕРКА НАЛИЧИЯ EMAIL И БЫСТРЫЕ ССЫЛКИ
@@ -775,7 +856,7 @@ setTimeout(function() {
       // Добавить - Запросить EMAIL клиента
       if ((val_email === undefined) && (text_added_email === undefined) && (open_ok === true)) {
         $('.my_is_open_panel, .my_quick_links').remove();
-        $append_message.append('<div class="my_is_email tabs__discrete-tab" style="display: block; font-weight: 600; padding: 7px 0px 7px 0px;"><span style="color: crimson; font-size: 17px;">Запросить EMAIL клиента</span></div>');
+        $append_message.append('<div class="my_is_email tabs__discrete-tab" style="display: block; font-weight: 600; padding: 7px 0px 7px 0px; cursor: default;"><span style="color: crimson; font-size: 17px;">Запросить EMAIL клиента</span></div>');
       }
       // Добавить - быстрые ссылки на админку
       if ((open_ok === true) && (val_email !== undefined)) {
@@ -790,39 +871,14 @@ setTimeout(function() {
         }
 
         if (text_added_lincks === undefined) {
-          if (quick_links_new === 'on') {
+          
             let admin_link = 'https://amd.platformalp.ru/';
-            $append_message.append('<div class="my_quick_links tabs__discrete-tab" style="display: block; padding: 6px 0px 6px 0px; margin-right: 0px;"><span style="color: crimson; font-size: 10px;"><a class="style_hover" target="_blank" href="' + admin_link + '?link=domains&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">DOM</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=pages&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">СТР|SSL</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=contacts&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">КОНТ</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=bills&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">СЧЕТ</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=integrations&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">ИНТ</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=tasks&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">TASK</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=logs&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">LOG</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=errors&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">ERR</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=users&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">USER</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=leads&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">LEAD</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=sms&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">SMS</a><a class="style_hover switch" style="margin-left: 10px; background-color: rgba(229, 55, 52, 0.2); color: black; -webkit-user-select: none; -moz-user-select: none;">С</a></span><style>.style_hover {text-decoration: none; padding: 10px 4px; border-radius: 15px 15px 15px 15px;} .style_hover:hover {background-color: rgba(200, 202, 204, 0.75); border-radius: 5px 5px 5px 5px;} .style_hover.switch:hover {background-color: rgba(229, 55, 52, 0.7)!important;}</style></div>');
-          } else {
-            val_email = val_email.replace('@', '%40');
-            let admin_link = 'https://adm.platformalp.ru/?search=';
-            $append_message.append('<div class="my_quick_links tabs__discrete-tab" style="display: block; padding: 6px 0px 6px 0px; margin-right: 0px;"><span style="color: crimson; font-size: 10px;"><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabDomains" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">DOM</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabPages" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">СТР</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabContacts" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">КОНТ</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabBills" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">СЧЕТ</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabInts" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">ИНТ</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabTasks" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">TASK</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabLogs" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">LOG</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabErrors" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">ERR</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabUsers" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">USER</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabCerts" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">SSL</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabLeads" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">LEAD</a><a class="style_hover" target="_blank" href="' + admin_link + val_email +'#tabSms" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">SMS</a><a class="style_hover switch" style="margin-left: 10px; background-color: rgba(0, 200, 100, 0.2); -webkit-user-select: none; color: black; -moz-user-select: none;">Н</a></span><style>.style_hover {text-decoration: none; padding: 10px 4px; border-radius: 15px 15px 15px 15px;} .style_hover:hover {background-color: rgba(200, 202, 204, 0.75); border-radius: 5px 5px 5px 5px;} .style_hover.switch:hover {background-color: rgba(0, 200, 100, 0.7)!important;}</style></div>');
-          }
+            $append_message.append('<div class="my_quick_links tabs__discrete-tab" style="display: block; padding: 6px 0px 6px 0px; margin-right: 0px;"><span style="color: crimson; font-size: 10px;"><a class="style_hover" target="_blank" href="' + admin_link + '?link=domains&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">DOM</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=pages&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">СТР|SSL</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=contacts&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">КОНТ</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=bills&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">СЧЕТ</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=integrations&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">ИНТ</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=tasks&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">TASK</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=logs&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">LOG</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=errors&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">ERR</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=users&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">USER</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=leads&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">LEAD</a><a class="style_hover" target="_blank" href="' + admin_link + '?link=sms&email=' + val_email + '" style="border-right: 2px solid rgba(159, 161, 163, 0.8);">SMS</a><a class="style_hover switch" style="margin-left: 10px; background-color: rgba(229, 55, 52, 0.2); color: black; -webkit-user-select: none; -moz-user-select: none;" href="https://adm.platformalp.ru/?search=' + val_email + '" target="_blank">С</a></span><style>.style_hover {text-decoration: none; padding: 10px 4px; border-radius: 15px 15px 15px 15px;} .style_hover:hover {background-color: rgba(200, 202, 204, 0.75); border-radius: 5px 5px 5px 5px;} .style_hover.switch:hover {background-color: rgba(229, 55, 52, 0.7)!important;}</style></div>');
+          
         }
       }
 
-      // Переключение быстрых ссылок на старую или новую админку
-      $('.style_hover.switch').dblclick(function() {
-        // Изменить значение ключа quick_links_new и перезаписать его
-        if (ok_dblclick === 0) {
 
-          ok_dblclick = 1;
-
-          if (quick_links_new === 'on') {
-            localStorage.setItem('quick_links_new', 'off');
-            quick_links_new = localStorage.getItem('quick_links_new');
-          } else {
-            localStorage.setItem('quick_links_new', 'on');
-            quick_links_new = localStorage.getItem('quick_links_new');
-          }
-
-          $('.my_quick_links').remove();
-
-          setTimeout(function() {
-            ok_dblclick = 0; // Перезапись разрешения клика
-          }, 2000);
-        }
-      });
     }, 250);
 
 
@@ -1090,9 +1146,9 @@ setTimeout(function() {
           };
           // console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии: ', data);
           var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));  // Кодирование в знаки Юникода в шестнадцатиричном формате (base64 => UTF-8), то же самое, что data только закодировано для передачи на сервер
-           console.log('Перекодировка: ', path);
+          // console.log('Перекодировка: ', path);
           var $img = $('<img src="https://support.lpteam.ru/reporter.php?data=' + path + '">');
-           console.log('Так будет передано на сервер: ', $img);
+          // console.log('Так будет передано на сервер: ', $img);
 
           // Дополнительная передача для 2line (unsolved - не решено, sadness - жалоба)
           if (users === '2line') {
@@ -1118,11 +1174,11 @@ setTimeout(function() {
                   msg: 'Жалоба',  // Текст, который будет отображаться в канале
                 };
               }
-               console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии (2line): ', data);
+              // console.log('Данные о версии, ссылке на тикет, имени агента, имени кнопки, количестве тикетов, комментарии (2line): ', data);
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));  // Кодирование в знаки Юникода в шестнадцатиричном формате (base64 => UTF-8), то же самое, что data только закодировано для передачи на сервер
-               console.log('Перекодировка (2line): ', path);
+              // console.log('Перекодировка (2line): ', path);
               var $img = $('<img src="https://support.lpteam.ru/reporter.php?data=' + path + '">');
-               console.log('Так будет передано на сервер (2line): ', $img);
+              // console.log('Так будет передано на сервер (2line): ', $img);
             }
           }
 
@@ -1150,7 +1206,7 @@ setTimeout(function() {
           note += $msg.val().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           // console.log('Имя кнопки в комментарий: ', note);
 
-          $('[class*="pane-selector"] a:nth-child(2)').click();  // Открыть комментарии в интеркоме
+          $('.inbox__conversation-controls__pane-selector a:contains("Note")').click();  // Открыть комментарии в интеркоме
           $('.composer-box [contenteditable="true"]').children().html(note);  // Вставка текста
           setTimeout(function() {
             // Клик по "Добавить комментарий"
@@ -1230,20 +1286,13 @@ setTimeout(function() {
                 var this_channel = $(this).text().trim();
                 var channel_search = this_channel.search(channel);
 
-                if (channel_search >= 0) {
+                if (channel_search !== -1) {
                   $(this).click();
+                  return false; // ДБез этого иногда тикет закрывался на себе
                 }
               });
 
-              // Дополнительная передача для 2line
-             // var data = {
-             //   version: vScript,
-              //  ticket: location.href,
-               // name: 'Закрытый тикет',
-               // channel: '2line',
-              //  msg: name,
-             // };
-			     // Дополнительная передача для 1line
+              // Дополнительная передача для 1line
               var data = {
                 version: vScript,
                 ticket: location.href,
@@ -1251,9 +1300,9 @@ setTimeout(function() {
                 channel: '1line',
                 msg: name,
               };
-               console.log('Закрытый тикет (2line): ', data);
+              // console.log('Закрытый тикет (2line): ', data);
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-               console.log('Crash или Closed - передача на сервер: ', path);
+              // console.log('Crash или Closed - передача на сервер: ', path);
               (new Image).src = 'https://support.lpteam.ru/reporter.php?data=' + path;
 
               // Кнопка отвечающая за закрытие тикета
@@ -1267,13 +1316,13 @@ setTimeout(function() {
               channel: isCrash ? 'crash' : 'closed',
               msg: name,
             };
-             console.log('Crash или Closed: ', data);
-             console.log('Crash или Closed: ', data.channel);
+            // console.log('Crash или Closed: ', data);
+            // console.log('Crash или Closed: ', data.channel);
 
             // Отправить отчет только в случае сбоя
             if (data.channel === 'crash') {
               var path = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-               console.log('Crash или Closed - передача на сервер: ', path);
+              // console.log('Crash или Closed - передача на сервер: ', path);
               (new Image).src = 'https://support.lpteam.ru/reporter.php?data=' + path;
             }
 
@@ -1542,7 +1591,6 @@ setInterval(function() {
         jQueryAdd.defer = "defer";
         document.head.appendChild(jQueryAdd);
 
-
         // Поиск аккаунта в новой админке
         document.getElementById('searchInput').onchange = function() {
           let input_value = this.value.replace(/ /g, '').replace(/P:/, 'p:').replace(/S:/, 's:');
@@ -1623,9 +1671,10 @@ setInterval(function() {
           request_id.send(null);
         };
 
+
         // Для функции быстрых ссылок, работает на основе меток в ссылке
         // Метка "?link=" - это определение раздела админки
-        // Метка "email=" - для отправки запроса по которому искать
+        // Метка "email=" - для отправки запроса по которому искать  a__o@mail.ru
         let option_url = location.search;
         let option_search_link = option_url.search(/\?link=/);
 
@@ -1643,68 +1692,21 @@ setInterval(function() {
           request_id.open('GET', 'https://amd.platformalp.ru/api/search/' + value_email + '', true);
           request_id.setRequestHeader('X-Token', '' + user_token + '');
           request_id.onload = function() {
-            // let account_id = request_id.response.split('[{"id":')[1].split(',')[0]; // id аккаунта
-            // window.location = 'https://amd.platformalp.ru/accounts/' + account_id + '/' + value_link + ''; // Открыть в текущей вкладке
-
-            var accountArr = []; // Массив с id найденных аккаунтов
-
-            // Поиск id аккаунтов и их запись в массив accountArr[]
-            for (let i = 1; i < 21; i++) { // i = 1, потому что 0 (ноль) будет содержать цифру количества найденных вариантов, но не содержит id аккаунта
-              let account_id_search = request_id.response.split(',"account_id":')[i];
-
-              if (account_id_search) {
-                account_id_search = account_id_search.split(',')[0]; // Получение id аккаунта
-
-                accountArr[i-1] = account_id_search.replace(/\D/g, ''); //Добавление id аккаунта в массив, в переменной accountArr[i-1] минус один нужен, чтобы нумерация значений в массиве начиналась в нуля
-                console.log("accountArr[i-1] (поиск по p:, доменному имени, email, логину (к примеру по sandergol)): ", accountArr[i-1]);
-              } else if (!account_id_search) {
-                account_id_search = request_id.response.split('[{"id":')[i]; // Получение id аккаунта в случае поиска по id аккаунта или по номеру счета
-
-                if (account_id_search) {
-                  account_id_search = account_id_search.split(',')[0];
-
-                  accountArr[i-1] = account_id_search.replace(/\D/g, ''); //Добавление id аккаунта в массив, в переменной accountArr[i-1] минус один нужен, чтобы нумерация значений в массиве начиналась в нуля
-                  console.log("accountArr[i-1] (поиск по p:, доменному имени, email, логину (к примеру по sandergol)): ", accountArr[i-1]);
-                } else {
-                  console.log('Количество найденных вариантов:', i - 1);
-                  // console.log("accountArr: ", accountArr);
-                  break;
-                }
-              }
-
+            var resp_acc = JSON.parse(request_id.responseText);
+            for(i=0; i<resp_acc.groups[1].items.length; i++){
+                if (resp_acc.groups[1].items[i].email.toLowerCase()==value_email.toLowerCase()) {
+                 var foundacc=true;   
+                window.location = 'https://amd.platformalp.ru/accounts/' + resp_acc.groups[1].items[i].account_id + '/' + value_link + '';}
             }
-
-            // Поиск отличающихся значений в массиве accountArr[], если отличий нет, тогда перейти по ссылке с полученным id
-            for (let i = 0; i < accountArr.length; i++) {
-
-              if (accountArr[0] !== accountArr[i]) { // Сравнивается первое значение со всеми остальными в массиве
-                console.log('Найденные id аккаунтов отличаются');
-
-                // Добавление в окно поиска найденных аккаунтов, за пример взят hakamada.project@gmail.com
-                $('#app #searchPanel').css('display', '');
-                $('#app #searchPanel .searchResults').append('<ul class="myResult"></ul>');
-
-                for (let count = 0; count < accountArr.length; count++) {
-                  $('#app #searchPanel .searchResults ul').append('<li><a href="/accounts/' + accountArr[count] + '/users" class=""><i class="ti-user"></i>  Аккаунт:  ' + accountArr[count] + '</a></li>');
-                }
-
-                $('#app #searchPanel .searchResults').append('<p class="myResult" style="font-size: 20px; font-weight: 600; color: black;">Среди найденных id аккаунтов, один из полученных id может являться айдишником пользователя, но не аккаунта. Это значит, что один из пользователей в каком-то из аккаунтов имеет такой же id, как и у основного аккаунта, то есть один и тот же id у пользователя и у аккаунта совпадают.</p>');
-
-                break;
-              } else if (i === (accountArr.length - 1)) {
-                console.log('Найденные id аккаунтов НЕ отличаются');
-                openAccount(accountArr[0]); // Выполнить переход в аккаунт
-              }
-            }
-
-            function openAccount(accountArr) {
-              if (accountArr) {
-                // console.log('Будет открыт аккаунт id:', accountArr);
-                window.location = 'https://amd.platformalp.ru/accounts/' + accountArr + '/' + value_link + ''; // Открыть в текущей вкладке
-              }
-            }
+             if (typeof foundacc == "undefined") alert("Не удалость найти аккаунт по email. Нужно выполнить поиск по другим параметрам.");                   
+         
+          
           };
           request_id.send(null);
+         
+
+                   
+
         } else { // Для функция подсветки с какого раздела пишет клиент
 
           // Метка "?page=" - для отправки запроса по которому искать
@@ -1761,7 +1763,7 @@ setInterval(function() {
         }
 
 
-        // УКРАШАТЕЛЬСТВА ДЛЯ НОВОЙ АДМИНКИ
+        // УКРАШАТЕЛЬСТВА ДЛЯ НОВОЙ АДМИНКИ 
         var myStyle = document.createElement('style');
         myStyle.className = 'myStyle';
         myStyle.innerHTML = '.ti-pencil-alt {color: rgb(0,200,100)!important;}'; // Зеленый цвет значков редактора
@@ -1992,10 +1994,18 @@ setInterval(function() {
                   }
                 }
               });
+            } else if (isUser.indexOf('Страницы') + 1){
+                
+                
+                
             }
+            
+            
+            
           }, 500);
         }
-      }
+      
+        }
     }
   }
 }, 250);
